@@ -12,11 +12,17 @@ class User(models.Model):
         return self.name
 
 
+choice_type = (
+    ("public", "Public"),
+    ("private", "Private"),
+)
+
+
 class Event(models.Model):
     event_name = models.CharField(max_length=300)
     event_time_from = models.DateTimeField(default=datetime.now())
     event_time_till = models.DateTimeField()
-    event_type = models.CharField(max_length=100)
+    event_type = models.CharField(max_length=20, choices=choice_type, default="1")
     organiser = models.ForeignKey(
         User, related_name="organiser", null=False, on_delete=models.CASCADE
     )

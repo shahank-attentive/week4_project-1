@@ -1,7 +1,7 @@
 from django.shortcuts import render
 from .models import User, Event
 from .serializers import UserSerializer, EventSerializer
-from rest_framework import viewsets, status
+from rest_framework import viewsets, status, filters
 from django.db.models import Model
 from django.http import JsonResponse
 from rest_framework.response import Response
@@ -22,100 +22,108 @@ class UserModelViewSet(viewsets.ModelViewSet):
 class EventModelViewSet(viewsets.ModelViewSet):
     queryset = Event.objects.all()
     serializer_class = EventSerializer
-    ordering_fields = ("time",)
+    # filter_backends = (filters.OrderingFilter,)
+    # ordering_fields = ("-event_time_from",)
 
     def get_queryset(self):
         user = self.request.query_params.get("user", None)
         filter_type = self.request.query_params.get("filter_type", None)
-        if user == None:
-            query_set = Event.objects.all()
+        try:
+            if user == None:
+                query_set = Event.objects.filter(
+                    Q(event_type="public") | Q(event_time_from__gte=timezone.now())
+                )
+            else:
+                if filter_type == None:
+                    query_set = Event.objects.filter(
+                        Q(organiser=user)
+                        | Q(event_type="public")
+                        | Q(users_invited__in=user)
+                    )
+
+                elif filter_type == "myevents_future":
+                    query_set = Event.objects.filter(
+                        (Q(organiser=user))
+                        & Q(
+                            # event_time_from__lte=timezone.now(),
+                            event_time_from__gte=timezone.now(),
+                        )
+                    )
+                elif filter_type == "myevents_ongoing":
+                    query_set = Event.objects.filter(
+                        (Q(organiser=user))
+                        & Q(
+                            event_time_from__lte=timezone.now(),
+                            event_time_till__gte=timezone.now(),
+                        )
+                    )
+                elif filter_type == "myevents_past":
+                    query_set = Event.objects.filter(
+                        (Q(organiser=user))
+                        & Q(
+                            # event_time_from__lte=timezone.now(),
+                            event_time_till__lte=timezone.now(),
+                        )
+                    )
+                elif filter_type == "myevents_public":
+                    query_set = Event.objects.filter(
+                        Q(organiser=user)
+                        & Q(event_type="public")
+                        # & Q(
+                        #     event_time_from__lte=timezone.now(),
+                        #     event_time_till__lte=timezone.now(),
+                        # )
+                    )
+                elif filter_type == "myevents_private":
+                    query_set = Event.objects.filter(
+                        Q(organiser=user)
+                        & Q(event_type="private")
+                        # & Q(
+                        #     # event_time_from__lte=timezone.now(),
+                        #     event_time_till__lte=timezone.now(),
+                        # )
+                    )
+
+                elif filter_type == "future":
+                    query_set = Event.objects.filter(
+                        (
+                            Q(organiser=user)
+                            | Q(event_type="public")
+                            | Q(users_invited__in=user)
+                        )
+                        & Q(
+                            # event_time_from__lte=timezone.now(),
+                            event_time_from__gte=timezone.now(),
+                        )
+                    )
+                elif filter_type == "ongoing":
+                    query_set = Event.objects.filter(
+                        (
+                            Q(organiser=user)
+                            | Q(event_type="public")
+                            | Q(users_invited__in=user)
+                        )
+                        & Q(
+                            event_time_from__lte=timezone.now(),
+                            event_time_till__gte=timezone.now(),
+                        )
+                    )
+                elif filter_type == "invited":
+                    query_set = Event.objects.filter(
+                        (Q(users_invited__in=user))
+                        & Q(
+                            # event_time_from__lte=timezone.now(),
+                            event_time_till__gte=timezone.now(),
+                        )
+                    )
+        except ValueError:
+            Response({"msg": " Field 'user' expected a number %s" % str(ValueError)})
         else:
-            if filter_type == None:
-                query_set = Event.objects.filter(
-                    Q(organiser=user)
-                    | Q(event_type="public")
-                    | Q(users_invited__in=user)
-                )
-
-            elif filter_type == "myevents_future":
-                query_set = Event.objects.filter(
-                    (Q(organiser=user))
-                    & Q(
-                        # event_time_from__lte=timezone.now(),
-                        event_time_from__gte=timezone.now(),
-                    )
-                )
-            elif filter_type == "myevents_ongoing":
-                query_set = Event.objects.filter(
-                    (Q(organiser=user))
-                    & Q(
-                        event_time_from__lte=timezone.now(),
-                        event_time_till__gte=timezone.now(),
-                    )
-                )
-            elif filter_type == "myevents_past":
-                query_set = Event.objects.filter(
-                    (Q(organiser=user))
-                    & Q(
-                        # event_time_from__lte=timezone.now(),
-                        event_time_till__lte=timezone.now(),
-                    )
-                )
-            elif filter_type == "myevents_public":
-                query_set = Event.objects.filter(
-                    Q(organiser=user)
-                    & Q(event_type="public")
-                    # & Q(
-                    #     event_time_from__lte=timezone.now(),
-                    #     event_time_till__lte=timezone.now(),
-                    # )
-                )
-            elif filter_type == "myevents_private":
-                query_set = Event.objects.filter(
-                    Q(organiser=user)
-                    & Q(event_type="private")
-                    # & Q(
-                    #     # event_time_from__lte=timezone.now(),
-                    #     event_time_till__lte=timezone.now(),
-                    # )
-                )
-
-            elif filter_type == "future":
-                query_set = Event.objects.filter(
-                    (
-                        Q(organiser=user)
-                        | Q(event_type="public")
-                        | Q(users_invited__in=user)
-                    )
-                    & Q(
-                        # event_time_from__lte=timezone.now(),
-                        event_time_from__gte=timezone.now(),
-                    )
-                )
-            elif filter_type == "ongoing":
-                query_set = Event.objects.filter(
-                    (
-                        Q(organiser=user)
-                        | Q(event_type="public")
-                        | Q(users_invited__in=user)
-                    )
-                    & Q(
-                        event_time_from__lte=timezone.now(),
-                        event_time_till__gte=timezone.now(),
-                    )
-                )
-            elif filter_type == "invited":
-                query_set = Event.objects.filter(
-                    (Q(users_invited__in=user))
-                    & Q(
-                        # event_time_from__lte=timezone.now(),
-                        event_time_till__gte=timezone.now(),
-                    )
-                )
+            return query_set.distinct()
 
             # print(type(organiser))
 
-        return query_set.distinct()  # kuch duplicates hai
+        # return query_set.distinct()  # kuch duplicates hai
 
     def list(self, request):
         # print(datetime.now())
@@ -155,6 +163,6 @@ class EventModelViewSet(viewsets.ModelViewSet):
         if (
             int(user) == instance.organiser.id
             and instance.event_time_from > timezone.now()
-        ):  # time condition remaining
+        ):
             self.perform_destroy(instance)
         return Response(status=status.HTTP_204_NO_CONTENT)
