@@ -19,6 +19,8 @@ from rest_framework.permissions import IsAuthenticatedOrReadOnly
 class UserModelViewSet(viewsets.ModelViewSet):
     queryset = User.objects.all()
     serializer_class = UserSerializer
+    authentication_classes = [BasicAuthentication]
+    permission_classes = [IsAuthenticatedOrReadOnly]
 
 
 class EventModelViewSet(viewsets.ModelViewSet):
@@ -27,11 +29,16 @@ class EventModelViewSet(viewsets.ModelViewSet):
     authentication_classes = [BasicAuthentication]
     permission_classes = [IsAuthenticatedOrReadOnly]
 
+    def perform_create(self, serializer):
+        serializer.save(organiser=self.request.user)
+
     def get_queryset(self):
         user = self.request.user.id
         # print("userr", user)
+
+        myevents = self.request.query_params.get("myevents", False)
         filter_type = self.request.query_params.get("filter_type", None)
-        print("filtertype", type(filter_type))
+        print("filtertype", (type(filter_type)))
         query_set = None
         if user == None:
             query_set = Event.objects.filter(
@@ -46,7 +53,7 @@ class EventModelViewSet(viewsets.ModelViewSet):
                 return query_set.distinct()
             else:
                 query_set2 = None
-                if filter_type == "myevents":
+                if filter_type1 == True:
                     query_set2 = Event.objects.filter(organiser=user)
 
                 if filter_type == "future":
@@ -56,10 +63,7 @@ class EventModelViewSet(viewsets.ModelViewSet):
                             | Q(event_type="public")
                             | Q(users_invited=user)
                         )
-                        & Q(
-                            # event_time_from__lte=timezone.now(),
-                            event_time_from__gte=timezone.now(),
-                        )
+                        & Q(event_time_from__gte=timezone.now())
                     )
                 elif filter_type == "ongoing":
                     query_set = Event.objects.filter(
@@ -75,11 +79,7 @@ class EventModelViewSet(viewsets.ModelViewSet):
                     )
                 elif filter_type == "invited":
                     query_set = Event.objects.filter(
-                        (Q(users_invited__in=user))
-                        & Q(
-                            # event_time_from__lte=timezone.now(),
-                            event_time_till__gte=timezone.now(),
-                        )
+                        users_invited__in=user, event_time_till__gte=timezone.now()
                     )
                 elif query_set2 is not None and query_set is not None:
                     return query_set.distinct() & query_set2.distinct()

@@ -20,13 +20,4 @@ class EventSerializer(serializers.ModelSerializer):
             "organiser",
             "users_invited",
         ]
-
-    # def create(self, validated_data):
-    #     data = validated_data.get("users_invited")
-    #     if sizeof(data) == 0:
-    #         validated_data.pop("users_invited")
-    #     # print("data", type(data))  # data is list of dict
-    #     # print("to print", data)
-    #     device = Event.objects.create(**validated_data)
-    #     # for a in data:  # fetching the list
-    #     #     Event.objects.create(device=device, **a)
+        read_only_fields = ("organiser",)
