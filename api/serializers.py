@@ -5,7 +5,7 @@ from .models import User, Event
 class UserSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
-        fields = ["id", "name", "email_id"]
+        fields = ["id", "username", "password", "email"]
 
 
 class EventSerializer(serializers.ModelSerializer):
@@ -30,4 +30,3 @@ class EventSerializer(serializers.ModelSerializer):
     #     device = Event.objects.create(**validated_data)
     #     # for a in data:  # fetching the list
     #     #     Event.objects.create(device=device, **a)
-    #     return device
