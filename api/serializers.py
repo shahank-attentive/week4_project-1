@@ -5,12 +5,14 @@ from .models import User, Event
 class UserSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
-        fields = ["id", "username", "password", "email"]
+        fields = ["id", "username", "password", "email", "is_staff"]
+        extra_kwargs = {"password": {"write_only": True}}
 
 
 class EventSerializer(serializers.ModelSerializer):
     class Meta:
         model = Event
+
         fields = [
             "id",
             "event_name",
