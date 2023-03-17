@@ -2,14 +2,6 @@ from django.db import models
 from datetime import datetime
 from django.contrib.auth.models import User
 
-# Create your models here.
-# class User(models.Model):
-#     name = models.CharField(max_length=200)
-#     email_id = models.CharField(max_length=100)
-
-#     def __str__(self):
-#         return self.name
-
 choice_type = (
     ("public", "Public"),
     ("private", "Private"),
@@ -27,9 +19,6 @@ class Event(models.Model):
     users_invited = models.ManyToManyField(
         User, blank=True, related_name="users_invited"
     )
-
-    # class Meta:
-    #     unique_together = (id,)
 
     def __str__(self):
         return self.event_name

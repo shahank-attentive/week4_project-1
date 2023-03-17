@@ -11,8 +11,6 @@ from django.utils import timezone
 from rest_framework.authentication import BasicAuthentication
 from rest_framework.permissions import IsAuthenticatedOrReadOnly
 
-# Create your views here.
-
 
 class UserModelViewSet(viewsets.ModelViewSet):
     queryset = User.objects.all()
@@ -30,7 +28,6 @@ class EventModelViewSet(viewsets.ModelViewSet):
 
     def get_queryset(self):
         user = self.request.user.id
-        # print("userr", user)
         filter_type = self.request.query_params.get("filter_type", None)
         myevents = self.request.query_params.get("myevents", None)
         print("filtertype", (type(myevents)))
@@ -112,8 +109,6 @@ class EventModelViewSet(viewsets.ModelViewSet):
                     return query_set.distinct()
                 if query_set2 is not None:
                     return query_set2.distinct()
-        # print(type(organiser))
-        # return query_set.distinct()  # kuch duplicates hai
 
     def list(self, request):
         query_set = self.get_queryset()
@@ -129,8 +124,6 @@ class EventModelViewSet(viewsets.ModelViewSet):
             context={"request": request},
         )
         user = self.request.user.id
-        # print(type(instance.organiser.id))
-        # print(user)
         Is_staff = self.request.user.is_staff
         print(Is_staff)
         if user == instance.organiser.id or Is_staff:
