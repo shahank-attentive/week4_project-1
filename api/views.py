@@ -16,6 +16,31 @@ class UserModelViewSet(viewsets.ModelViewSet):
     queryset = User.objects.all()
     serializer_class = UserSerializer
 
+    def list(self, request):
+        return Response(status=status.HTTP_405_METHOD_NOT_ALLOWED)
+
+    def create(self, request):
+        serializer = self.serializer_class(data=request.data)
+        query = dict(request.data)
+        print(dict(request.data))
+        Is_staff = query.get("is_staff")[0]
+        print(Is_staff)
+        if Is_staff == "True":
+            if self.request.user.is_staff == True:
+                print("admin me ho")
+                if serializer.is_valid():
+                    print("andar ho yr")
+                    self.perform_create(serializer)
+                    return Response(status=status.HTTP_201_CREATED)
+            else:
+                print("admin se bahar ho")
+                return Response(status=status.HTTP_405_METHOD_NOT_ALLOWED)
+        elif serializer.is_valid():
+            self.perform_create(serializer)
+            return Response(status=status.HTTP_201_CREATED)
+
+        return Response(status=status.HTTP_405_METHOD_NOT_ALLOWED)
+
 
 class EventModelViewSet(viewsets.ModelViewSet):
     queryset = Event.objects.all()
@@ -24,6 +49,7 @@ class EventModelViewSet(viewsets.ModelViewSet):
     permission_classes = [IsAuthenticatedOrReadOnly]
 
     def perform_create(self, serializer):
+        # print(self.request.)
         serializer.save(organiser=self.request.user)
 
     def get_queryset(self):
@@ -57,6 +83,7 @@ class EventModelViewSet(viewsets.ModelViewSet):
                     )
                 if filter_type == "public":
                     query_set = Event.objects.filter(event_type="public")
+
                 return query_set.distinct()
             # for non-staff
             if filter_type == None and myevents == None:
@@ -139,6 +166,7 @@ class EventModelViewSet(viewsets.ModelViewSet):
         instance = self.get_object()
         Is_staff = self.request.user.is_staff
         user = self.request.user.id
+        # print(instance.organiser.id)
         if Is_staff or (
             int(user) == instance.organiser.id
             and instance.event_time_from > timezone.now()
